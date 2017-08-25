@@ -1,0 +1,26 @@
+{
+  "name": "mistaken-pull-closer",
+  "version": "1.0.0",
+  "description": "",
+  "author": "Lee Dohm <lee-dohm@github.com>",
+  "license": "MIT",
+  "repository": "https://github.com/atom/mistaken-pull-closer.git",
+  "scripts": {
+    "start": "probot run ./index.js",
+    "test": "standard"
+  },
+  "dependencies": {
+    "probot": "^0.10.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.1",
+    "eslint-config-probot": ">=0.1.0",
+    "localtunnel": "^1.8.3",
+    "mocha": "^3.5.0",
+    "standard": "^10.0.3"
+  },
+  "engines": {
+    "node": ">= 7.7.0",
+    "npm": ">= 4.0.0"
+  }
+}
