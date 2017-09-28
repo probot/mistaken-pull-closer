@@ -1,8 +1,8 @@
 const commentBody = `
 Thanks for your submission.
 
-It appears that you've created a pull request using one of our release branches. Since this is
-almost always a mistake, we're going to go ahead and close this. If you meant to do this, please
+It appears that you've created a pull request using one of our repository's branches. Since this is
+almost always a mistake, we're going to go ahead and close this. If it was intentional, please
 let us know what you were intending and we can see about reopening it.
 
 Thanks again!
@@ -18,14 +18,30 @@ async function comment (context, params) {
   return context.github.issues.createComment(params)
 }
 
+async function hasPushAccess (context, params) {
+  const permissionResponse = await context.github.repos.reviewUserPermissionLevel(params)
+  const level = permissionResponse.permission
+
+  return level === 'admin' || level === 'write'
+}
+
 module.exports = (robot) => {
   robot.on('pull_request.opened', async context => {
-    // If the payload.head.label matches then it is a PR against a releases branch which is
-    // invariably a mistake
-    if (context.payload.pull_request.head.label.match(/^atom:\d+\.\d+-releases$/)) {
-      await comment(context, context.issue({body: commentBody}))
+    const repoName = context.payload.repository.name
+    const branchLabel = context.payload.pull_request.head.label
 
-      return close(context, context.issue())
+    // If the branch label starts with the repo name, then it is a PR from a branch in the local
+    // repo
+    if (branchLabel.startsWith(repoName)) {
+      const canPush = await hasPushAccess(context.repo({username: context.payload.pull_request.user.login}))
+
+      // If the user creating the PR from a local branch doesn't have push access, then they
+      // can't push to their own PR and it isn't going to be useful
+      if (!canPush) {
+        await comment(context, context.issue({body: commentBody}))
+
+        return close(context, context.issue())
+      }
     }
   })
 }
