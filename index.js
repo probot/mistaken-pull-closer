@@ -27,12 +27,12 @@ async function hasPushAccess (context, params) {
 
 module.exports = (robot) => {
   robot.on('pull_request.opened', async context => {
-    const repoName = context.payload.repository.name
+    const {repo} = context.repo()
     const branchLabel = context.payload.pull_request.head.label
 
     // If the branch label starts with the repo name, then it is a PR from a branch in the local
     // repo
-    if (branchLabel.startsWith(repoName)) {
+    if (branchLabel.startsWith(repo)) {
       const canPush = await hasPushAccess(context.repo({username: context.payload.pull_request.user.login}))
 
       // If the user creating the PR from a local branch doesn't have push access, then they
