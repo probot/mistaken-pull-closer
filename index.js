@@ -20,7 +20,7 @@ async function comment (context, params) {
 
 async function hasPushAccess (context, params) {
   const permissionResponse = await context.github.repos.reviewUserPermissionLevel(params)
-  const level = permissionResponse.permission
+  const level = permissionResponse.data.permission
 
   return level === 'admin' || level === 'write'
 }
