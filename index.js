@@ -8,6 +8,13 @@ let us know what you were intending and we can see about reopening it.
 Thanks again!
 `
 
+async function addInvalidLabel (context, issue) {
+  const params = Object.assign({}, issue, {labels: ['invalid']})
+
+  await ensureLabelExists(context, {name: 'invalid', color: 'e6e6e6'})
+  await context.github.issues.addLabels(params)
+}
+
 async function close (context, params) {
   const closeParams = Object.assign({}, params, {state: 'closed'})
 
@@ -16,6 +23,12 @@ async function close (context, params) {
 
 async function comment (context, params) {
   return context.github.issues.createComment(params)
+}
+
+async function ensureLabelExists (context, {name, color}) {
+  return context.github.issues.getLabel(context.repo({name})).catch(() => {
+    return context.github.issues.createLabel(context.repo({name, color}))
+  })
 }
 
 async function hasPushAccess (context, params) {
@@ -44,6 +57,7 @@ module.exports = (robot) => {
         robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
 
         await comment(context, context.issue({body: commentBody}))
+        await addInvalidLabel(context, context.issue())
 
         return close(context, context.issue())
       }
