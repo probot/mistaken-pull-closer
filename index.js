@@ -51,7 +51,7 @@ module.exports = (robot) => {
 
       // If the user is a bot then it was invited to open pull requests and isn't the
       // kind of mistake this bot was intended to detect
-      if (user.type !== "Bot") {
+      if (user.type !== 'Bot') {
         robot.log.debug(`User creating the PR is not a bot`)
 
         const username = user.login
