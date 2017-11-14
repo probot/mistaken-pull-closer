@@ -47,19 +47,26 @@ module.exports = (robot) => {
     // repo
     if (branchLabel.startsWith(owner)) {
       robot.log.debug(`PR created from branch in the local repo`)
+      const user = context.payload.pull_request.user
 
-      const username = context.payload.pull_request.user.login
-      const canPush = await hasPushAccess(context, context.repo({username}))
+      // If the user is a bot then it was invited to open pull requests and isn't the
+      // kind of mistake this bot was intended to detect
+      if (user.type !== "Bot") {
+        robot.log.debug(`User creating the PR is not a bot`)
 
-      // If the user creating the PR from a local branch doesn't have push access, then they
-      // can't push to their own PR and it isn't going to be useful
-      if (!canPush) {
-        robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
+        const username = user.login
+        const canPush = await hasPushAccess(context, context.repo({username}))
 
-        await comment(context, context.issue({body: commentBody}))
-        await addInvalidLabel(context, context.issue())
+        // If the user creating the PR from a local branch is not a bot and doesn't have push
+        // access, then they can't push to their own PR and it isn't going to be useful
+        if (!canPush) {
+          robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
 
-        return close(context, context.issue())
+          await comment(context, context.issue({body: commentBody}))
+          await addInvalidLabel(context, context.issue())
+
+          return close(context, context.issue())
+        }
       }
     }
   })
