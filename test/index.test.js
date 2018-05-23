@@ -152,4 +152,32 @@ describe('mistaken-pull-closer', () => {
       })
     })
   })
+
+  describe('when an alternate label is configured', () => {
+    it('creates the configured label', async () => {
+      github.issues.getLabel = jest.fn().mockReturnValue(Promise.reject(new Error()))
+      setConfig({labelName: 'autoclosed', labelColor: 'c0ffee'})
+      setPermissionLevel('read')
+
+      await sendPullRequest(pullRequestFromReleaseBranch)
+
+      expect(github.issues.createLabel).toHaveBeenCalledWith({
+        color: 'c0ffee',
+        name: 'autoclosed',
+        owner: 'atom',
+        repo: 'atom'
+      })
+    })
+  })
+
+  describe('when addLabel is false', function () {
+    it('does not add the label to the PR', async () => {
+      setConfig({addLabel: false})
+      setPermissionLevel('read')
+
+      await sendPullRequest(pullRequestFromReleaseBranch)
+
+      expect(github.issues.addLabels).not.toHaveBeenCalled()
+    })
+  })
 })

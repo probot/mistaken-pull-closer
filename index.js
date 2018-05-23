@@ -9,13 +9,16 @@ almost always a mistake, we're going to go ahead and close this. If it was inten
 let us know what you were intending and we can see about reopening it.
 
 Thanks again!
-`
+`,
+  addLabel: true,
+  labelName: 'invalid',
+  labelColor: 'e6e6e6'
 }
 
-async function addInvalidLabel (context, issue) {
-  const params = Object.assign({}, issue, {labels: ['invalid']})
+async function addLabel (context, issue, name, color) {
+  const params = Object.assign({}, issue, {labels: [name]})
 
-  await ensureLabelExists(context, {name: 'invalid', color: 'e6e6e6'})
+  await ensureLabelExists(context, {name, color})
   await context.github.issues.addLabels(params)
 }
 
@@ -30,9 +33,11 @@ async function comment (context, params) {
 }
 
 async function ensureLabelExists (context, {name, color}) {
-  return context.github.issues.getLabel(context.repo({name})).catch(() => {
+  try {
+    return await context.github.issues.getLabel(context.repo({name}))
+  } catch (e) {
     return context.github.issues.createLabel(context.repo({name, color}))
-  })
+  }
 }
 
 async function hasPushAccess (context, params) {
@@ -70,7 +75,10 @@ module.exports = (robot) => {
           robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
 
           await comment(context, context.issue({body: config.commentBody}))
-          await addInvalidLabel(context, context.issue())
+          if (config.addLabel) {
+            await addLabel(
+                context, context.issue(), config.labelName, config.labelColor)
+          }
 
           return close(context, context.issue())
         }
