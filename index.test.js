@@ -31,6 +31,14 @@ describe('mistaken-pull-closer', () => {
     return jest.fn().mockReturnValue(Promise.resolve())
   }
 
+  function setConfig (config) {
+    github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
+      data: {
+        content: Buffer.from(JSON.stringify(config)).toString('base64')
+      }
+    }))
+  }
+
   function setPermissionLevel (level) {
     github.repos.reviewUserPermissionLevel =
         jest.fn().mockReturnValue(Promise.resolve({
@@ -58,6 +66,8 @@ describe('mistaken-pull-closer', () => {
       },
       repos: {}
     }
+
+    setConfig(null)
     setPermissionLevel('read')
     robot.auth = () => Promise.resolve(github)
   })
@@ -80,6 +90,22 @@ describe('mistaken-pull-closer', () => {
       })
       expect(github.issues.addLabels).toHaveBeenCalledWith({
         labels: ['invalid'],
+        number: 15445,
+        owner: 'atom',
+        repo: 'atom'
+      })
+    })
+
+    it('configured message used', async () => {
+      const testComment = 'test comment'
+      setConfig({commentBody: testComment})
+      await robot.receive({
+        name: 'pull_request.opened',
+        event: 'pull_request',
+        payload: pullRequestFromReleaseBranch
+      })
+      expect(github.issues.createComment).toHaveBeenCalledWith({
+        body: testComment,
         number: 15445,
         owner: 'atom',
         repo: 'atom'

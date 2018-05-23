@@ -1,4 +1,7 @@
-const commentBody = `
+const getConfig = require('probot-config')
+
+const defaultConfig = {
+  commentBody: `
 Thanks for your submission.
 
 It appears that you've created a pull request using one of our repository's branches. Since this is
@@ -7,6 +10,7 @@ let us know what you were intending and we can see about reopening it.
 
 Thanks again!
 `
+}
 
 async function addInvalidLabel (context, issue) {
   const params = Object.assign({}, issue, {labels: ['invalid']})
@@ -40,6 +44,8 @@ async function hasPushAccess (context, params) {
 
 module.exports = (robot) => {
   robot.on('pull_request.opened', async context => {
+    const config = await getConfig(
+        context, 'mistaken-pull-closer.yml', defaultConfig)
     const {owner} = context.repo()
     const branchLabel = context.payload.pull_request.head.label
 
@@ -62,7 +68,7 @@ module.exports = (robot) => {
         if (!canPush) {
           robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
 
-          await comment(context, context.issue({body: commentBody}))
+          await comment(context, context.issue({body: config.commentBody}))
           await addInvalidLabel(context, context.issue())
 
           return close(context, context.issue())
