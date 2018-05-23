@@ -150,4 +150,23 @@ describe('mistaken-pull-closer', () => {
       expect(github.issues.edit).not.toHaveBeenCalled()
     })
   })
+
+  describe('innocuous PR', () => {
+    it('default configuration does not close innocuous PR', async () => {
+      setPermissionLevel('admin')
+      await sendPullRequest(pullRequestFromReleaseBranch)
+      expect(github.issues.getLabel).not.toHaveBeenCalled()
+      expect(github.issues.createLabel).not.toHaveBeenCalled()
+      expect(github.issues.addLabels).not.toHaveBeenCalled()
+      expect(github.issues.createComment).not.toHaveBeenCalled()
+      expect(github.issues.edit).not.toHaveBeenCalled()
+    })
+
+    it('closeAll closes innocuous PR', async () => {
+      setConfig({closeAll: true})
+      setPermissionLevel('admin')
+      await sendPullRequest(pullRequestFromReleaseBranch)
+      expect(github.issues.edit).toHaveBeenCalled()
+    })
+  })
 })

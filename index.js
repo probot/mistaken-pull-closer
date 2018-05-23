@@ -12,7 +12,8 @@ Thanks again!
 `,
   addLabel: true,
   labelName: 'invalid',
-  labelColor: 'e6e6e6'
+  labelColor: 'e6e6e6',
+  closeAll: false
 }
 
 async function addLabel (context, issue, name, color) {
@@ -47,12 +48,27 @@ async function hasPushAccess (context, params) {
   return level === 'admin' || level === 'write'
 }
 
+async function performCloseSequence (context, config) {
+  await comment(context, context.issue({body: config.commentBody}))
+  if (config.addLabel) {
+    await addLabel(
+        context, context.issue(), config.labelName, config.labelColor)
+  }
+
+  return close(context, context.issue())
+}
+
 module.exports = (robot) => {
   robot.on('pull_request.opened', async context => {
     const config = await getConfig(
         context, 'mistaken-pull-closer.yml', defaultConfig)
     const {owner} = context.repo()
     const branchLabel = context.payload.pull_request.head.label
+
+    if (config.closeAll) {
+      robot.log.debug(`PR closed since closeAll setting is enabled`)
+      return performCloseSequence(context, config)
+    }
 
     // If the branch label starts with the owner name, then it is a PR from a branch in the local
     // repo
@@ -72,14 +88,7 @@ module.exports = (robot) => {
         // access, then they can't push to their own PR and it isn't going to be useful
         if (!canPush) {
           robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
-
-          await comment(context, context.issue({body: config.commentBody}))
-          if (config.addLabel) {
-            await addLabel(
-                context, context.issue(), config.labelName, config.labelColor)
-          }
-
-          return close(context, context.issue())
+          return performCloseSequence(context, config)
         }
       }
     }

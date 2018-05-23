@@ -40,6 +40,10 @@ labelName: autoclosed
 # The desired color of the label, in the event that it needs to be created.
 # Default: e6e6e6
 labelColor: c0ffee
+
+# Whether or not to close all PRs.
+# Default: false
+closeAll: false
 ```
 
 ## Searching
