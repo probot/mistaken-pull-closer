@@ -28,6 +28,22 @@ commentBody: |
   So I am going to close this PR.
 
   Have a nice day.
+
+# Whether or not to add a label to the closed PR.
+# Default: true
+addLabel: true
+
+# The name of the label to add.
+# Default: invalid
+labelName: autoclosed
+
+# The desired color of the label, in the event that it needs to be created.
+# Default: e6e6e6
+labelColor: c0ffee
+
+# Whether or not to close all PRs.
+# Default: false
+closeAll: false
 ```
 
 ## Searching

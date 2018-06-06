@@ -99,17 +99,43 @@ describe('mistaken-pull-closer', () => {
     it('configured message used', async () => {
       const testComment = 'test comment'
       setConfig({commentBody: testComment})
-      await robot.receive({
-        name: 'pull_request.opened',
-        event: 'pull_request',
-        payload: pullRequestFromReleaseBranch
-      })
+      await sendPullRequest(pullRequestFromReleaseBranch)
       expect(github.issues.createComment).toHaveBeenCalledWith({
         body: testComment,
         number: 15445,
         owner: 'atom',
         repo: 'atom'
       })
+    })
+
+    it('configured label used', async () => {
+      const testLabel = 'test label'
+      const testColor = 'c0ffee'
+      setConfig({
+        labelName: testLabel,
+        labelColor: testColor
+      })
+      deleteLabel()
+      await sendPullRequest(pullRequestFromReleaseBranch)
+      expect(github.issues.createLabel).toHaveBeenCalledWith({
+        color: testColor,
+        name: testLabel,
+        owner: 'atom',
+        repo: 'atom'
+      })
+      expect(github.issues.addLabels).toHaveBeenCalledWith({
+        labels: [testLabel],
+        number: 15445,
+        owner: 'atom',
+        repo: 'atom'
+      })
+    })
+
+    it('configured label disabled', async () => {
+      setConfig({addLabel: false})
+      await sendPullRequest(pullRequestFromReleaseBranch)
+      expect(github.issues.createLabel).not.toHaveBeenCalled()
+      expect(github.issues.addLabels).not.toHaveBeenCalled()
     })
   })
 
@@ -122,6 +148,25 @@ describe('mistaken-pull-closer', () => {
       expect(github.issues.addLabels).not.toHaveBeenCalled()
       expect(github.issues.createComment).not.toHaveBeenCalled()
       expect(github.issues.edit).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('innocuous PR', () => {
+    it('default configuration does not close innocuous PR', async () => {
+      setPermissionLevel('admin')
+      await sendPullRequest(pullRequestFromReleaseBranch)
+      expect(github.issues.getLabel).not.toHaveBeenCalled()
+      expect(github.issues.createLabel).not.toHaveBeenCalled()
+      expect(github.issues.addLabels).not.toHaveBeenCalled()
+      expect(github.issues.createComment).not.toHaveBeenCalled()
+      expect(github.issues.edit).not.toHaveBeenCalled()
+    })
+
+    it('closeAll closes innocuous PR', async () => {
+      setConfig({closeAll: true})
+      setPermissionLevel('admin')
+      await sendPullRequest(pullRequestFromReleaseBranch)
+      expect(github.issues.edit).toHaveBeenCalled()
     })
   })
 })
