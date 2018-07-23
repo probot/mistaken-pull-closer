@@ -31,12 +31,18 @@ describe('mistaken-pull-closer', () => {
     return jest.fn().mockReturnValue(Promise.resolve())
   }
 
+  // TODO: We should be mocking probot-config out completely rather than building upon
+  //       assumptions about its implementation details.
   function setConfig (config) {
-    github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
-      data: {
-        content: Buffer.from(JSON.stringify(config)).toString('base64')
-      }
-    }))
+    if (config) {
+      github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
+        data: {
+          content: Buffer.from(JSON.stringify(config)).toString('base64')
+        }
+      }))
+    } else {
+      github.repos.getContent = jest.fn().mockReturnValue(Promise.reject({code: 404}))
+    }
   }
 
   function setPermissionLevel (level) {
