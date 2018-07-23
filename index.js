@@ -44,10 +44,11 @@ async function hasPushAccess (context, params) {
 
 module.exports = (robot) => {
   robot.on('pull_request.opened', async context => {
-    const config = await getConfig(
-        context, 'mistaken-pull-closer.yml', defaultConfig)
+    const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig)
     const {owner} = context.repo()
     const branchLabel = context.payload.pull_request.head.label
+
+    robot.log.debug(`Inspecting: ${context.payload.pull_request.html_url}`)
 
     // If the branch label starts with the owner name, then it is a PR from a branch in the local
     // repo

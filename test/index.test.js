@@ -1,9 +1,9 @@
 /* eslint-env jest */
 
 const {createRobot} = require('probot')
-const app = require('.')
+const app = require('../index')
 const pullRequestFromReleaseBranch =
-    require('./test/fixtures/pull-request-from-release-branch')
+    require('./fixtures/pull-request-from-release-branch')
 
 const defaultCommentBody = `
 Thanks for your submission.
