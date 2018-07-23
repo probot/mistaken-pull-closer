@@ -41,7 +41,9 @@ describe('mistaken-pull-closer', () => {
         }
       }))
     } else {
-      github.repos.getContent = jest.fn().mockReturnValue(Promise.reject({code: 404}))
+      let error = new Error()
+      error.code = 404
+      github.repos.getContent = jest.fn().mockReturnValue(Promise.reject(error))
     }
   }
 
@@ -54,18 +56,13 @@ describe('mistaken-pull-closer', () => {
         }))
   }
 
-  function deleteLabel () {
-    github.issues.getLabel =
-        jest.fn().mockReturnValue(Promise.reject(new Error()))
-  }
-
   beforeEach(() => {
     robot = createRobot()
     app(robot)
     github = {
       issues: {
         createComment: bareJest(),
-        getLabel: bareJest(),
+        getLabel: jest.fn().mockReturnValue(Promise.resolve()),
         addLabels: bareJest(),
         createLabel: bareJest(),
         edit: bareJest()
@@ -73,61 +70,86 @@ describe('mistaken-pull-closer', () => {
       repos: {}
     }
 
-    setConfig(null)
-    setPermissionLevel('read')
     robot.auth = () => Promise.resolve(github)
   })
 
-  describe('close sequence behavior', () => {
-    it('default configuration used', async () => {
-      deleteLabel()
-      await sendPullRequest(pullRequestFromReleaseBranch)
-      expect(github.issues.createComment).toHaveBeenCalledWith({
-        body: defaultCommentBody,
-        number: 15445,
-        owner: 'atom',
-        repo: 'atom'
+  describe('when the default configuration is used', async () => {
+    beforeEach(async () => {
+      setConfig(null)
+    })
+
+    describe('and the label does not exist', async () => {
+      beforeEach(async () => {
+        setPermissionLevel('read')
+        github.issues.getLabel = jest.fn().mockReturnValue(Promise.reject(new Error()))
+        await sendPullRequest(pullRequestFromReleaseBranch)
       })
-      expect(github.issues.createLabel).toHaveBeenCalledWith({
-        color: 'e6e6e6',
-        name: 'invalid',
-        owner: 'atom',
-        repo: 'atom'
-      })
-      expect(github.issues.addLabels).toHaveBeenCalledWith({
-        labels: ['invalid'],
-        number: 15445,
-        owner: 'atom',
-        repo: 'atom'
+
+      it('creates the label', async () => {
+        expect(github.issues.createLabel).toHaveBeenCalledWith({
+          color: 'e6e6e6',
+          name: 'invalid',
+          owner: 'atom',
+          repo: 'atom'
+        })
       })
     })
 
-    it('configured message used', async () => {
+    describe('and a mistaken PR is opened', async () => {
+      beforeEach(async () => {
+        setPermissionLevel('read')
+        await sendPullRequest(pullRequestFromReleaseBranch)
+      })
+
+      it('adds the default comment', async () => {
+        expect(github.issues.createComment).toHaveBeenCalledWith({
+          body: defaultCommentBody,
+          number: 15445,
+          owner: 'atom',
+          repo: 'atom'
+        })
+      })
+
+      it('adds the label to the pull request', async () => {
+        expect(github.issues.addLabels).toHaveBeenCalledWith({
+          labels: ['invalid'],
+          number: 15445,
+          owner: 'atom',
+          repo: 'atom'
+        })
+      })
+    })
+
+    describe('and a normal PR is opened', () => {
+      beforeEach(async () => {
+        setPermissionLevel('admin')
+        await sendPullRequest(pullRequestFromReleaseBranch)
+      })
+
+      it('is not closed', async () => {
+        expect(github.issues.getLabel).not.toHaveBeenCalled()
+        expect(github.issues.createLabel).not.toHaveBeenCalled()
+        expect(github.issues.addLabels).not.toHaveBeenCalled()
+        expect(github.issues.createComment).not.toHaveBeenCalled()
+        expect(github.issues.edit).not.toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe('when an alternate message is configured', () => {
+    it('uses the configured message', async () => {
       const testComment = 'test comment'
       setConfig({commentBody: testComment})
-      await robot.receive({
-        name: 'pull_request.opened',
-        event: 'pull_request',
-        payload: pullRequestFromReleaseBranch
-      })
+      setPermissionLevel('read')
+
+      await sendPullRequest(pullRequestFromReleaseBranch)
+
       expect(github.issues.createComment).toHaveBeenCalledWith({
         body: testComment,
         number: 15445,
         owner: 'atom',
         repo: 'atom'
       })
-    })
-  })
-
-  describe('innocuous PR', () => {
-    it('default configuration does not close innocuous PR', async () => {
-      setPermissionLevel('admin')
-      await sendPullRequest(pullRequestFromReleaseBranch)
-      expect(github.issues.getLabel).not.toHaveBeenCalled()
-      expect(github.issues.createLabel).not.toHaveBeenCalled()
-      expect(github.issues.addLabels).not.toHaveBeenCalled()
-      expect(github.issues.createComment).not.toHaveBeenCalled()
-      expect(github.issues.edit).not.toHaveBeenCalled()
     })
   })
 })
