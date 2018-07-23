@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "probot": "^0.11.0",
-    "probot-config": "^0.1.0"
+    "probot-config": "^0.2.0"
   },
   "devDependencies": {
     "eslint-config-probot": ">=0.1.0",
