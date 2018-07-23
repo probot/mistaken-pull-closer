@@ -44,7 +44,7 @@ async function hasPushAccess (context, params) {
 
 module.exports = (robot) => {
   robot.on('pull_request.opened', async context => {
-    const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig)
+    const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig) || defaultConfig
     const {owner} = context.repo()
     const branchLabel = context.payload.pull_request.head.label
 
