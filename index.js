@@ -1,19 +1,5 @@
+const defaultConfig = require('./default-config')
 const getConfig = require('probot-config')
-
-const defaultConfig = {
-  commentBody: `
-Thanks for your submission.
-
-It appears that you've created a pull request using one of our repository's branches. Since this is
-almost always a mistake, we're going to go ahead and close this. If it was intentional, please
-let us know what you were intending and we can see about reopening it.
-
-Thanks again!
-`,
-  addLabel: true,
-  labelName: 'invalid',
-  labelColor: 'e6e6e6'
-}
 
 async function addLabel (context, issue, name, color) {
   const params = Object.assign({}, issue, {labels: [name]})
@@ -47,24 +33,25 @@ async function hasPushAccess (context, params) {
   return level === 'admin' || level === 'write'
 }
 
-module.exports = (robot) => {
-  robot.on('pull_request.opened', async context => {
+module.exports = (app) => {
+  app.on('pull_request.opened', async context => {
     const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig) || defaultConfig
     const {owner} = context.repo()
     const branchLabel = context.payload.pull_request.head.label
+    const htmlUrl = context.payload.pull_request.html_url
 
-    robot.log.debug(`Inspecting: ${context.payload.pull_request.html_url}`)
+    app.log.debug(`Inspecting: ${htmlUrl}`)
 
     // If the branch label starts with the owner name, then it is a PR from a branch in the local
     // repo
     if (branchLabel.startsWith(owner)) {
-      robot.log.debug(`PR created from branch in the local repo`)
+      app.log.debug(`PR created from branch in the local repo ✅ [1 of 3]`)
       const user = context.payload.pull_request.user
 
       // If the user is a bot then it was invited to open pull requests and isn't the
       // kind of mistake this bot was intended to detect
       if (user.type !== 'Bot') {
-        robot.log.debug(`User creating the PR is not a bot`)
+        app.log.debug(`User creating the PR is not a bot ✅ [2 of 3]`)
 
         const username = user.login
         const canPush = await hasPushAccess(context, context.repo({username}))
@@ -72,14 +59,14 @@ module.exports = (robot) => {
         // If the user creating the PR from a local branch is not a bot and doesn't have push
         // access, then they can't push to their own PR and it isn't going to be useful
         if (!canPush) {
-          robot.log.debug(`PR created from repo branch and user cannot push - closing PR`)
+          app.log.debug(`PR created from repo branch and user cannot push ✅ [3 of 3]`)
 
           await comment(context, context.issue({body: config.commentBody}))
           if (config.addLabel) {
-            await addLabel(
-                context, context.issue(), config.labelName, config.labelColor)
+            await addLabel(context, context.issue(), config.labelName, config.labelColor)
           }
 
+          app.log.debug(`Close PR ${htmlUrl}`)
           return close(context, context.issue())
         }
       }
