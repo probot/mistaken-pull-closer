@@ -18,11 +18,11 @@ Thanks again!
 let app
 let github
 
-async function sendPullRequest (payload) {
-  await app.receive({
+function sendPullRequest (payload) {
+  return app.receive({
     name: 'pull_request.opened',
     event: 'pull_request',
-    payload: pullRequestFromReleaseBranch
+    payload: payload
   })
 }
 
