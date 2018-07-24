@@ -171,13 +171,20 @@ describe('mistaken-pull-closer', () => {
   })
 
   describe('when addLabel is false', function () {
-    it('does not add the label to the PR', async () => {
+    beforeEach(async () => {
       setConfig({addLabel: false})
       setPermissionLevel('read')
 
       await sendPullRequest(pullRequestFromReleaseBranch)
+    })
 
+    it('does not add the label to the PR', async () => {
       expect(github.issues.addLabels).not.toHaveBeenCalled()
+    })
+
+    it('does not create the label', async () => {
+      expect(github.issues.getLabel).not.toHaveBeenCalled()
+      expect(github.issues.createLabel).not.toHaveBeenCalled()
     })
   })
 })
