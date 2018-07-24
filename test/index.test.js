@@ -1,19 +1,12 @@
 /* eslint-env jest */
 
 const {Application} = require('probot')
+const defaultConfig = require('../default-config')
 const startApp = require('../index')
 const pullRequestFromReleaseBranch =
     require('./fixtures/pull-request-from-release-branch')
 
-const defaultCommentBody = `
-Thanks for your submission.
-
-It appears that you've created a pull request using one of our repository's branches. Since this is
-almost always a mistake, we're going to go ahead and close this. If it was intentional, please
-let us know what you were intending and we can see about reopening it.
-
-Thanks again!
-`
+const defaultCommentBody = defaultConfig.commentBody
 
 let app
 let github
