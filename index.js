@@ -63,8 +63,7 @@ module.exports = (app) => {
 
           await comment(context, context.issue({body: config.commentBody}))
           if (config.addLabel) {
-            await addLabel(
-                context, context.issue(), config.labelName, config.labelColor)
+            await addLabel(context, context.issue(), config.labelName, config.labelColor)
           }
 
           app.log.debug(`Close PR ${htmlUrl}`)
