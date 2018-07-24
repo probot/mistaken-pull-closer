@@ -6,13 +6,14 @@
   "license": "MIT",
   "repository": "https://github.com/probot/mistaken-pull-closer.git",
   "scripts": {
+    "lint": "stardard",
     "start": "probot run ./index.js",
     "test:standard": "standard",
     "test:jest": "jest",
     "test": "npm-run-all test:jest test:standard"
   },
   "dependencies": {
-    "probot": "^0.11.0",
+    "probot": "^7.0.1",
     "probot-config": "^0.2.0"
   },
   "devDependencies": {
