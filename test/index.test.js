@@ -1,7 +1,7 @@
 /* eslint-env jest */
 
-const {createRobot} = require('probot')
-const app = require('../index')
+const {Application} = require('probot')
+const startApp = require('../index')
 const pullRequestFromReleaseBranch =
     require('./fixtures/pull-request-from-release-branch')
 
@@ -15,50 +15,50 @@ let us know what you were intending and we can see about reopening it.
 Thanks again!
 `
 
-describe('mistaken-pull-closer', () => {
-  let robot
-  let github
+let app
+let github
 
-  async function sendPullRequest (payload) {
-    await robot.receive({
-      name: 'pull_request.opened',
-      event: 'pull_request',
-      payload: pullRequestFromReleaseBranch
-    })
+async function sendPullRequest (payload) {
+  await app.receive({
+    name: 'pull_request.opened',
+    event: 'pull_request',
+    payload: pullRequestFromReleaseBranch
+  })
+}
+
+function bareJest () {
+  return jest.fn().mockReturnValue(Promise.resolve())
+}
+
+// TODO: We should be mocking probot-config out completely rather than building upon
+//       assumptions about its implementation details.
+function setConfig (config) {
+  if (config) {
+    github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
+      data: {
+        content: Buffer.from(JSON.stringify(config)).toString('base64')
+      }
+    }))
+  } else {
+    let error = new Error()
+    error.code = 404
+    github.repos.getContent = jest.fn().mockReturnValue(Promise.reject(error))
   }
+}
 
-  function bareJest () {
-    return jest.fn().mockReturnValue(Promise.resolve())
-  }
+function setPermissionLevel (level) {
+  github.repos.reviewUserPermissionLevel =
+    jest.fn().mockReturnValue(Promise.resolve({
+      data: {
+        permission: level
+      }
+    }))
+}
 
-  // TODO: We should be mocking probot-config out completely rather than building upon
-  //       assumptions about its implementation details.
-  function setConfig (config) {
-    if (config) {
-      github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
-        data: {
-          content: Buffer.from(JSON.stringify(config)).toString('base64')
-        }
-      }))
-    } else {
-      let error = new Error()
-      error.code = 404
-      github.repos.getContent = jest.fn().mockReturnValue(Promise.reject(error))
-    }
-  }
+describe('mistaken-pull-closer', async () => {
+  beforeEach(async () => {
+    app = new Application()
 
-  function setPermissionLevel (level) {
-    github.repos.reviewUserPermissionLevel =
-        jest.fn().mockReturnValue(Promise.resolve({
-          data: {
-            permission: level
-          }
-        }))
-  }
-
-  beforeEach(() => {
-    robot = createRobot()
-    app(robot)
     github = {
       issues: {
         createComment: bareJest(),
@@ -70,7 +70,9 @@ describe('mistaken-pull-closer', () => {
       repos: {}
     }
 
-    robot.auth = () => Promise.resolve(github)
+    app.auth = () => Promise.resolve(github)
+
+    startApp(app)
   })
 
   describe('when the default configuration is used', async () => {
