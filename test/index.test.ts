@@ -1,17 +1,14 @@
-/* eslint-env jest */
-
-const {Application} = require('probot')
-const defaultConfig = require('../default-config')
-const startApp = require('../index')
-const pullRequestFromReleaseBranch =
-    require('./fixtures/pull-request-from-release-branch')
+import {Application} from 'probot'
+import defaultConfig from '../src/default-config'
+import startApp from '../src/index'
+import * as pullRequestFromReleaseBranch from './fixtures/pull-request-from-release-branch.json'
 
 const defaultCommentBody = defaultConfig.commentBody
 
-let app
-let github
+let app: any
+let github: any
 
-function sendPullRequest (payload) {
+function sendPullRequest (payload: any) {
   return app.receive({
     name: 'pull_request.opened',
     event: 'pull_request',
@@ -25,7 +22,7 @@ function bareJest () {
 
 // TODO: We should be mocking probot-config out completely rather than building upon
 //       assumptions about its implementation details.
-function setConfig (config) {
+function setConfig (config: any) {
   if (config) {
     github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
       data: {
@@ -39,7 +36,7 @@ function setConfig (config) {
   }
 }
 
-function setPermissionLevel (level) {
+function setPermissionLevel (level: any) {
   github.repos.reviewUserPermissionLevel =
     jest.fn().mockReturnValue(Promise.resolve({
       data: {
@@ -115,7 +112,7 @@ describe('mistaken-pull-closer', async () => {
       })
     })
 
-    describe('and a normal PR is opened', () => {
+    describe('and a normal PR is opened', async () => {
       beforeEach(async () => {
         setPermissionLevel('admin')
         await sendPullRequest(pullRequestFromReleaseBranch)
@@ -131,7 +128,7 @@ describe('mistaken-pull-closer', async () => {
     })
   })
 
-  describe('when an alternate message is configured', () => {
+  describe('when an alternate message is configured', async () => {
     it('uses the configured message', async () => {
       const testComment = 'test comment'
       setConfig({commentBody: testComment})
@@ -148,7 +145,7 @@ describe('mistaken-pull-closer', async () => {
     })
   })
 
-  describe('when an alternate label is configured', () => {
+  describe('when an alternate label is configured', async () => {
     it('creates the configured label', async () => {
       github.issues.getLabel = jest.fn().mockReturnValue(Promise.reject(new Error()))
       setConfig({labelName: 'autoclosed', labelColor: 'c0ffee'})
@@ -165,7 +162,7 @@ describe('mistaken-pull-closer', async () => {
     })
   })
 
-  describe('when addLabel is false', function () {
+  describe('when addLabel is false', async () => {
     beforeEach(async () => {
       setConfig({addLabel: false})
       setPermissionLevel('read')
