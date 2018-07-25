@@ -1,4 +1,5 @@
 const defaultConfig = require('./default-config')
+const jp = require('jsonpath')
 const getConfig = require('probot-config')
 
 async function addLabel (context, issue, name, color) {
@@ -35,41 +36,32 @@ async function hasPushAccess (context, params) {
 
 module.exports = (app) => {
   app.on('pull_request.opened', async context => {
-    const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig) || defaultConfig
-    const {owner} = context.repo()
-    const branchLabel = context.payload.pull_request.head.label
     const htmlUrl = context.payload.pull_request.html_url
+    app.log.debug(`Inspecting: ${htmlUrl}`)
 
-    app.log.info(`Inspecting: ${htmlUrl}`)
+    const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig) || defaultConfig
+    const username = context.payload.pull_request.user.login
+    const canPush = await hasPushAccess(context, context.repo({username}))
+    const data = Object.assign({has_push_access: canPush}, context.payload)
 
-    // If the branch label starts with the owner name, then it is a PR from a branch in the local
-    // repo
-    if (branchLabel.startsWith(owner)) {
-      app.log.info(`PR created from branch in the local repo ✅ [1 of 3]`)
-      const user = context.payload.pull_request.user
-
-      // If the user is a bot then it was invited to open pull requests and isn't the
-      // kind of mistake this bot was intended to detect
-      if (user.type !== 'Bot') {
-        app.log.info(`User creating the PR is not a bot ✅ [2 of 3]`)
-
-        const username = user.login
-        const canPush = await hasPushAccess(context, context.repo({username}))
-
-        // If the user creating the PR from a local branch is not a bot and doesn't have push
-        // access, then they can't push to their own PR and it isn't going to be useful
-        if (!canPush) {
-          app.log.info(`PR created from repo branch and user cannot push ✅ [3 of 3]`)
-
-          await comment(context, context.issue({body: config.commentBody}))
-          if (config.addLabel) {
-            await addLabel(context, context.issue(), config.labelName, config.labelColor)
-          }
-
-          app.log.info(`Close PR ${htmlUrl}`)
-          return close(context, context.issue())
+    if (!config.filters.every((filter, i) => {
+      try {
+        if (jp.query([data], `$[?(${filter})]`).length > 0) {
+          app.log.info(`Filter "${filter}" matched the PR ✅ [${i + 1} of ${config.filters.length}]`)
+          return true
         }
+      } catch (e) {
+        app.log.debug(`Malformed JSONPath query: "${filter}"`)
       }
+      return false
+    })) return
+
+    app.log.debug(`Close PR ${htmlUrl}`)
+    await comment(context, context.issue({body: config.commentBody}))
+    if (config.addLabel) {
+      await addLabel(
+          context, context.issue(), config.labelName, config.labelColor)
     }
+    return close(context, context.issue())
   })
 }

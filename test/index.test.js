@@ -113,11 +113,72 @@ describe('mistaken-pull-closer', async () => {
           repo: 'atom'
         })
       })
+
+      it('is closed', async () => {
+        expect(github.issues.edit).toHaveBeenCalledWith({
+          number: 15445,
+          owner: 'atom',
+          repo: 'atom',
+          state: 'closed'
+        })
+      })
     })
 
     describe('and a normal PR is opened', () => {
       beforeEach(async () => {
         setPermissionLevel('admin')
+        await sendPullRequest(pullRequestFromReleaseBranch)
+      })
+
+      it('is not closed', async () => {
+        expect(github.issues.getLabel).not.toHaveBeenCalled()
+        expect(github.issues.createLabel).not.toHaveBeenCalled()
+        expect(github.issues.addLabels).not.toHaveBeenCalled()
+        expect(github.issues.createComment).not.toHaveBeenCalled()
+        expect(github.issues.edit).not.toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe('when alternate filters are configured', () => {
+    beforeEach(async () => {
+      setPermissionLevel('read')
+    })
+
+    describe('and the filters should match', () => {
+      beforeEach(async () => {
+        setConfig({filters: ['@.pull_request.milestone == null']})
+        await sendPullRequest(pullRequestFromReleaseBranch)
+      })
+
+      it('is closed', async () => {
+        expect(github.issues.edit).toHaveBeenCalledWith({
+          number: 15445,
+          owner: 'atom',
+          repo: 'atom',
+          state: 'closed'
+        })
+      })
+    })
+
+    describe('and a filter should not match', () => {
+      beforeEach(async () => {
+        setConfig({filters: ['@.pull_request.milestone == "notamilestone"']})
+        await sendPullRequest(pullRequestFromReleaseBranch)
+      })
+
+      it('is not closed', async () => {
+        expect(github.issues.getLabel).not.toHaveBeenCalled()
+        expect(github.issues.createLabel).not.toHaveBeenCalled()
+        expect(github.issues.addLabels).not.toHaveBeenCalled()
+        expect(github.issues.createComment).not.toHaveBeenCalled()
+        expect(github.issues.edit).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and a filter has syntax errors', () => {
+      beforeEach(async () => {
+        setConfig({filters: ['!']})
         await sendPullRequest(pullRequestFromReleaseBranch)
       })
 
