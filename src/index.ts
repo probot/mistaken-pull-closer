@@ -1,24 +1,30 @@
-const defaultConfig = require('./default-config')
-const getConfig = require('probot-config')
+import defaultConfig from './default-config'
+import {Application, Context} from 'probot'
+import Config from 'probot-config'
 
-async function addLabel (context, issue, name, color) {
+interface LabelParams {
+  name: string,
+  color: string
+}
+
+async function addLabel (context: Context, issue: any, name: string, color: string) {
   const params = Object.assign({}, issue, {labels: [name]})
 
   await ensureLabelExists(context, {name, color})
   await context.github.issues.addLabels(params)
 }
 
-async function close (context, params) {
+async function close (context: Context, params: any) {
   const closeParams = Object.assign({}, params, {state: 'closed'})
 
   return context.github.issues.edit(closeParams)
 }
 
-async function comment (context, params) {
+async function comment (context: Context, params: any) {
   return context.github.issues.createComment(params)
 }
 
-async function ensureLabelExists (context, {name, color}) {
+async function ensureLabelExists (context: Context, {name, color}: LabelParams) {
   try {
     return await context.github.issues.getLabel(context.repo({name}))
   } catch (e) {
@@ -26,15 +32,15 @@ async function ensureLabelExists (context, {name, color}) {
   }
 }
 
-async function hasPushAccess (context, params) {
+async function hasPushAccess (context: Context, params: any) {
   const permissionResponse = await context.github.repos.reviewUserPermissionLevel(params)
   const level = permissionResponse.data.permission
 
   return level === 'admin' || level === 'write'
 }
 
-module.exports = (app) => {
-  app.on('pull_request.opened', async context => {
+export = (app: Application, getConfig = Config.getConfig) => {
+  app.on('pull_request.opened', async (context: Context): Promise<any> => {
     const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig) || defaultConfig
     const {owner} = context.repo()
     const branchLabel = context.payload.pull_request.head.label

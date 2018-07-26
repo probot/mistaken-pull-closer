@@ -1,4 +1,4 @@
-module.exports = {
+export = {
   commentBody: `
 Thanks for your submission.
 
