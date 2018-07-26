@@ -30,9 +30,7 @@ function setConfig (config: any) {
       }
     }))
   } else {
-    let error = new Error()
-    error.code = 404
-    github.repos.getContent = jest.fn().mockReturnValue(Promise.reject(error))
+    github.repos.getContent = jest.fn().mockReturnValue(Promise.reject({code: 404}))
   }
 }
 
