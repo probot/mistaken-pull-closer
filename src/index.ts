@@ -1,6 +1,6 @@
 import defaultConfig from './default-config'
 import {Application, Context} from 'probot'
-import {getConfig} from 'probot-config'
+import Config from 'probot-config'
 
 interface LabelParams {
   name: string,
@@ -39,7 +39,7 @@ async function hasPushAccess (context: Context, params: any) {
   return level === 'admin' || level === 'write'
 }
 
-export = (app: Application) => {
+export = (app: Application, getConfig = Config.getConfig) => {
   app.on('pull_request.opened', async (context: Context): Promise<any> => {
     const config = await getConfig(context, 'mistaken-pull-closer.yml', defaultConfig) || defaultConfig
     const {owner} = context.repo()

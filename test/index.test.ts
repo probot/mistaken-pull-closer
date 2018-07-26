@@ -1,4 +1,4 @@
-import {Application} from 'probot'
+import {Application, Context} from 'probot'
 import defaultConfig from '../src/default-config'
 import startApp from '../src/index'
 import * as pullRequestFromReleaseBranch from './fixtures/pull-request-from-release-branch.json'
@@ -6,6 +6,7 @@ import * as pullRequestFromReleaseBranch from './fixtures/pull-request-from-rele
 const defaultCommentBody = defaultConfig.commentBody
 
 let app: any
+let config: any
 let github: any
 
 function sendPullRequest (payload: any) {
@@ -20,18 +21,16 @@ function bareJest () {
   return jest.fn().mockReturnValue(Promise.resolve())
 }
 
-// TODO: We should be mocking probot-config out completely rather than building upon
-//       assumptions about its implementation details.
-function setConfig (config: any) {
+function getConfig (context: Context, fileName: string, defaultConfig?: object): Promise<any> {
   if (config) {
-    github.repos.getContent = jest.fn().mockReturnValue(Promise.resolve({
-      data: {
-        content: Buffer.from(JSON.stringify(config)).toString('base64')
-      }
-    }))
+    return Promise.resolve(Object.assign({}, defaultConfig || {}, config))
   } else {
-    github.repos.getContent = jest.fn().mockReturnValue(Promise.reject({code: 404}))
+    return Promise.resolve(null)
   }
+}
+
+function setConfig (tempConfig: any) {
+  config = tempConfig
 }
 
 function setPermissionLevel (level: any) {
@@ -60,7 +59,7 @@ describe('mistaken-pull-closer', async () => {
 
     app.auth = () => Promise.resolve(github)
 
-    startApp(app)
+    startApp(app, getConfig)
   })
 
   describe('when the default configuration is used', async () => {
