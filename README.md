@@ -18,7 +18,7 @@ See [docs/deploy.md](docs/deploy.md) if you would like to run your own instance 
 
 You can specify a configuration by adding a file to your repo named
 `.github/mistaken-pull-closer.yml`.  Example:
-```
+```yml
 # The message to post to the closed PR.
 commentBody: |
   You are a developer star
