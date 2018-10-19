@@ -18,7 +18,8 @@ See [docs/deploy.md](docs/deploy.md) if you would like to run your own instance 
 
 You can specify a configuration by adding a file to your repo named
 `.github/mistaken-pull-closer.yml`.  Example:
-```
+
+```yml
 # The JSONPath filter expression used to identify which PRs to close.
 # The data filtered is the pull request data along with other metadata passed in
 # by probot.
