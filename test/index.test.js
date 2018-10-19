@@ -14,7 +14,6 @@ let github
 function sendPullRequest (payload) {
   return app.receive({
     name: 'pull_request.opened',
-    event: 'pull_request',
     payload: payload
   })
 }
