@@ -18,7 +18,19 @@ See [docs/deploy.md](docs/deploy.md) if you would like to run your own instance 
 
 You can specify a configuration by adding a file to your repo named
 `.github/mistaken-pull-closer.yml`.  Example:
+
 ```yml
+# The JSONPath filter expression used to identify which PRs to close.
+# The data filtered is the pull request data along with other metadata passed in
+# by probot.
+# See http://goessner.net/articles/JsonPath/
+# Default behavior: matches all non-Bot created PRs where the user does not have
+# permission to push to the PR itself.
+filters:
+    - @.pull_request.number == 13
+    - @.pull_request.base.repo.name == "superstitions"
+    - @.pull_request.base.repo.description == "A project opposed to unlucky numbers"
+
 # The message to post to the closed PR.
 commentBody: |
   You are a developer star
