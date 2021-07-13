@@ -1,3 +1,7 @@
+# ⚠️ We no longer recommend using this app
+
+Use the action instead: https://github.com/lee-dohm/mistaken-pull-closer
+
 # mistaken-pull-closer
 
 > a GitHub App built with [probot](https://github.com/probot/probot) that automatically closes pull requests that are commonly mistakes.
